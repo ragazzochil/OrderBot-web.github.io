@@ -1,9 +1,9 @@
 /**
- * MACCHINA A GANCIO - VERSIONE FINALE v6
- * Bella • Funzionante • Webhook Discord
+ * MACCHINA A GANCIO - VERSIONE FINALE FIGA v7
+ * Con Webhook Discord automatico sui premi rari
  */
 
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/v10/webhooks/1511405598489575657/kfAincCiahPdZJjkF48XjUFPoeMlc9IhR6V575DS6eWllmXgXH7iWfZ1PnYxja1kgl5T';
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1511405598489575657/kfAincCiahPdZJjkF48XjUFPoeMlc9IhR6V575DS6eWllmXgXH7iWfZ1PnYxja1kgl5T';
 
 class ClawMachineGame {
     constructor(canvasId) {
@@ -30,12 +30,12 @@ class ClawMachineGame {
         this.claw = {
             x: 0,
             targetX: 0,
-            speed: 6.2,
+            speed: 6.5,
             state: 'IDLE',
             armLength: 50,
-            maxArmLength: 250,
-            dropSpeed: 7.2,
-            retractSpeed: 4.6,
+            maxArmLength: 255,
+            dropSpeed: 7.5,
+            retractSpeed: 4.8,
             grabOffset: 0
         };
 
@@ -81,8 +81,8 @@ class ClawMachineGame {
             { name: 'Pelouche Verde', value: 30, color: '#55efc4', r: 14, rare: false },
             { name: 'Pelouche Rosa', value: 35, color: '#fd79a8', r: 16, rare: false },
             { name: 'Moneta Oro', value: 50, color: '#f9ca24', r: 11, rare: false },
-            { name: 'Pelouche Raro', value: 80, color: '#a29bfe', r: 17, rare: true },
-            { name: 'Tesoro', value: 120, color: '#e17055', r: 13, rare: true },
+            { name: 'Pelouche Raro', value: 90, color: '#a29bfe', r: 17, rare: true },
+            { name: 'Tesoro Leggendario', value: 150, color: '#e17055', r: 13, rare: true },
         ];
 
         for (let i = 0; i < 15; i++) {
@@ -213,7 +213,7 @@ class ClawMachineGame {
                     this.claw.armLength = this.claw.maxArmLength;
                     this.claw.state = 'GRABBING';
                     this.claw.grabOffset = 10;
-                    setTimeout(() => this._tryGrab(), 120);
+                    setTimeout(() => this._tryGrab(), 110);
                 }
                 break;
 
@@ -272,47 +272,49 @@ class ClawMachineGame {
             closest.grabbed = true;
             this._winPrize(closest);
         } else {
-            this._particle(cx, cy, 0, 1.8, '#888', 12);
+            this._particle(cx, cy, 0, 1.5, '#888', 12);
         }
     }
 
     _winPrize(prize) {
-        const isSpecial = prize.rare && Math.random() < 0.3;
+        const isRare = prize.rare;
         let amount = prize.value;
         let msg = `Hai vinto: ${prize.name} (+${amount} coins)`;
 
-        if (isSpecial || Math.random() < 0.05) {
-            amount = 280;
-            msg = '🎉 HAI VINTO IL RUOLO CUSTOM!';
-            this._sendWebhookLog(prize.name);
+        if (isRare) {
+            amount = Math.floor(prize.value * 2.2);
+            msg = `🎉 HAI VINTO ${prize.name.toUpperCase()}! (+${amount} coins)`;
+            this._sendWebhookLog(prize.name, amount);
         }
 
         this.credits += amount;
         this.score += Math.floor(amount * 0.7);
         this.totalWon += amount;
         this.message = msg;
-        this.messageTimer = 110;
+        this.messageTimer = isRare ? 160 : 110;
 
-        const col = isSpecial ? '#f9ca24' : prize.color;
-        for (let i = 0; i < (isSpecial ? 38 : 18); i++) {
+        const col = isRare ? '#f9ca24' : prize.color;
+        const particleCount = isRare ? 55 : 22;
+
+        for (let i = 0; i < particleCount; i++) {
             const a = Math.random() * Math.PI * 2;
-            const spd = 1.4 + Math.random() * 3;
+            const spd = isRare ? (2 + Math.random() * 4) : (1.5 + Math.random() * 3);
             this._particle(this.claw.x, this.machine.top + 70 + this.claw.armLength,
-                Math.cos(a) * spd, Math.sin(a) * spd - 1.4, col, 35);
+                Math.cos(a) * spd, Math.sin(a) * spd - 1.8, col, isRare ? 45 : 35);
         }
 
         setTimeout(() => {
             this.prizes = this.prizes.filter(p => p.id !== prize.id);
             if (this.prizes.length < 5) this._genPrizes();
-        }, 500);
+        }, isRare ? 700 : 500);
     }
 
     _releasePrize() {
         this.prizes.forEach(p => {
             if (p.grabbed) {
                 p.grabbed = false;
-                p.vx = (Math.random() - 0.5) * 2.8;
-                p.vy = -1.4;
+                p.vx = (Math.random() - 0.5) * 3;
+                p.vy = -1.5;
             }
         });
     }
@@ -325,24 +327,36 @@ class ClawMachineGame {
         this.particles = this.particles.filter(p => {
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.07;
+            p.vy += 0.08;
             p.life--;
             return p.life > 0;
         });
     }
 
-    async _sendWebhookLog(prizeName) {
+    async _sendWebhookLog(prizeName, amount) {
         if (!DISCORD_WEBHOOK_URL) return;
+
         try {
-            const name = (document.getElementById('player-name')?.value || 'GIOCATORE').slice(0,12).toUpperCase();
+            const playerName = (document.getElementById('player-name')?.value || 'GIOCATORE').toUpperCase().slice(0, 12);
+
+            const payload = {
+                content: `🎰 **${playerName}** ha trovato un **PREMIO RARO** nella **MACCHINA A GANCIO**!`,
+                embeds: [{
+                    title: "🎁 VINCITA RARA - RUOLO CUSTOM",
+                    description: `**${playerName}**\nPremio: **${prizeName}**\nValore: **${amount} coins**`,
+                    color: 0xf9ca24,
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
             await fetch(DISCORD_WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    content: `🎰 **${name}** ha vinto il **RUOLO CUSTOM** nella Macchina a Gancio!`
-                })
+                body: JSON.stringify(payload)
             });
-        } catch (_) {}
+        } catch (e) {
+            console.log('%c[Webhook] Errore invio Discord (non bloccante)', 'color:#f66');
+        }
     }
 
     draw() {
@@ -372,7 +386,7 @@ class ClawMachineGame {
         this.prizes.forEach(p => {
             c.save();
             c.translate(p.x, p.y);
-            if (p.grabbed) c.rotate(Math.sin(Date.now() / 140) * 0.06);
+            if (p.grabbed) c.rotate(Math.sin(Date.now() / 130) * 0.06);
 
             c.fillStyle = 'rgba(0,0,0,0.3)';
             c.beginPath();
@@ -431,12 +445,12 @@ class ClawMachineGame {
         if (this.message && this.messageTimer > 0) {
             const alpha = Math.min(1, this.messageTimer / 30);
             c.fillStyle = `rgba(10,12,20,${0.9 * alpha})`;
-            c.fillRect(this.width/2 - 220, 55, 440, 50);
-            c.strokeStyle = this.message.includes('RUOLO') ? '#f9ca24' : '#55efc4';
+            c.fillRect(this.width/2 - 230, 55, 460, 52);
+            c.strokeStyle = this.message.includes('RUOLO') || this.message.includes('RARO') ? '#f9ca24' : '#55efc4';
             c.lineWidth = 3;
-            c.strokeRect(this.width/2 - 220, 55, 440, 50);
+            c.strokeRect(this.width/2 - 230, 55, 460, 52);
 
-            c.fillStyle = this.message.includes('RUOLO') ? '#f9ca24' : '#fff';
+            c.fillStyle = this.message.includes('RUOLO') || this.message.includes('RARO') ? '#f9ca24' : '#fff';
             c.font = 'bold 16px Inter, system-ui';
             c.textAlign = 'center';
             c.fillText(this.message, this.width/2, 82);
@@ -525,7 +539,7 @@ class ClawMachineGame {
             '• Muovi il gancio con ← → o toccando i lati',
             '• Tocca il pulsante giallo per lanciare',
             '• Il gancio si chiude da solo',
-            '• Vinci coins e ruoli custom su Discord!',
+            '• I premi rari fanno partire il webhook su Discord!',
             '• Ogni lancio costa 200 crediti',
             '• R = Ricarica la macchina'
         ];
