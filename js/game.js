@@ -1,5 +1,5 @@
 /**
- * STELLAR COLLECTOR - Versione Definitiva
+ * STELLAR COLLECTOR - Versione Finale
  */
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1511405598489575657/kfAincCiahPdZJjkF48XjUFPoeMlc9IhR6V575DS6eWllmXgXH7iWfZ1PnYxja1kgl5T';
 
@@ -17,9 +17,7 @@ class StellarCollector {
         this.items = [];
         this.asteroids = [];
         this.particles = [];
-
         this.keys = {};
-        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
         this.spawnTimer = 0;
         this.difficulty = 1;
@@ -94,6 +92,7 @@ class StellarCollector {
             this.spawnTimer = 0;
         }
 
+        // Items
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
             item.y += item.vy;
@@ -116,6 +115,7 @@ class StellarCollector {
             if (item.y > this.height + 20) this.items.splice(i, 1);
         }
 
+        // Asteroidi
         for (let i = this.asteroids.length - 1; i >= 0; i--) {
             const ast = this.asteroids[i];
             ast.y += ast.vy;
@@ -182,6 +182,7 @@ class StellarCollector {
             c.fillRect(x, y, 1.8, 1.8);
         }
 
+        // Player
         c.fillStyle = '#74b9ff';
         c.beginPath();
         c.moveTo(this.player.x, this.player.y - 20);
@@ -190,6 +191,7 @@ class StellarCollector {
         c.closePath();
         c.fill();
 
+        // Items
         this.items.forEach(item => {
             c.fillStyle = item.type === 'star' ? '#f9ca24' : '#f1c40f';
             c.beginPath();
@@ -197,6 +199,7 @@ class StellarCollector {
             c.fill();
         });
 
+        // Asteroidi
         this.asteroids.forEach(ast => {
             c.fillStyle = '#7f8c8d';
             c.beginPath();
@@ -204,6 +207,7 @@ class StellarCollector {
             c.fill();
         });
 
+        // Particles
         this.particles.forEach(p => {
             c.globalAlpha = p.life / 35;
             c.fillStyle = p.color;
@@ -213,6 +217,7 @@ class StellarCollector {
         });
         c.globalAlpha = 1;
 
+        // HUD
         c.fillStyle = 'rgba(15,18,28,0.9)';
         c.fillRect(0, 0, this.width, 48);
         c.fillStyle = '#f9ca24';
