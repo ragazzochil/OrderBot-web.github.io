@@ -1,6 +1,6 @@
 /**
- * MACCHINA A GANCIO v5 - MECCANISMO STABILE
- * Claw Machine con logica corretta e fluida
+ * MACCHINA A GANCIO - VERSIONE FINALE v6
+ * Bella • Funzionante • Webhook Discord
  */
 
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/v10/webhooks/1511405598489575657/kfAincCiahPdZJjkF48XjUFPoeMlc9IhR6V575DS6eWllmXgXH7iWfZ1PnYxja1kgl5T';
@@ -27,16 +27,15 @@ class ClawMachineGame {
         this.showDiscordPrompt = false;
         this._btnPressed = false;
 
-        // Claw - Meccanismo migliorato
         this.claw = {
             x: 0,
             targetX: 0,
-            speed: 6.5,
+            speed: 6.2,
             state: 'IDLE',
             armLength: 50,
-            maxArmLength: 255,
-            dropSpeed: 7.5,
-            retractSpeed: 4.8,
+            maxArmLength: 250,
+            dropSpeed: 7.2,
+            retractSpeed: 4.6,
             grabOffset: 0
         };
 
@@ -60,40 +59,40 @@ class ClawMachineGame {
     }
 
     _updateMachineSize() {
-        const scale = Math.max(0.55, Math.min(1.05, Math.min(this.width, this.height) / 700));
+        const scale = Math.max(0.58, Math.min(1.0, Math.min(this.width, this.height) / 720));
         this.scale = scale;
 
         this.machine = {
-            width: Math.floor(580 * scale),
-            height: Math.floor(480 * scale),
-            left: Math.floor((this.width - 580 * scale) / 2),
-            top: Math.floor(35 * scale),
-            glassLeft: Math.floor((this.width - 540 * scale) / 2),
-            glassTop: Math.floor(80 * scale),
-            glassW: Math.floor(540 * scale),
-            glassH: Math.floor(320 * scale)
+            width: Math.floor(560 * scale),
+            height: Math.floor(470 * scale),
+            left: Math.floor((this.width - 560 * scale) / 2),
+            top: Math.floor(30 * scale),
+            glassLeft: Math.floor((this.width - 520 * scale) / 2),
+            glassTop: Math.floor(75 * scale),
+            glassW: Math.floor(520 * scale),
+            glassH: Math.floor(310 * scale)
         };
     }
 
     _genPrizes() {
         this.prizes = [];
         const types = [
-            { name: 'Pelouche Blu', value: 25, color: '#74b9ff', r: 16, rare: false },
-            { name: 'Pelouche Verde', value: 30, color: '#55efc4', r: 15, rare: false },
-            { name: 'Pelouche Rosa', value: 35, color: '#fd79a8', r: 17, rare: false },
-            { name: 'Moneta Oro', value: 50, color: '#f9ca24', r: 12, rare: false },
-            { name: 'Pelouche Raro', value: 80, color: '#a29bfe', r: 18, rare: true },
-            { name: 'Tesoro', value: 120, color: '#e17055', r: 14, rare: true },
+            { name: 'Pelouche Blu', value: 25, color: '#74b9ff', r: 15, rare: false },
+            { name: 'Pelouche Verde', value: 30, color: '#55efc4', r: 14, rare: false },
+            { name: 'Pelouche Rosa', value: 35, color: '#fd79a8', r: 16, rare: false },
+            { name: 'Moneta Oro', value: 50, color: '#f9ca24', r: 11, rare: false },
+            { name: 'Pelouche Raro', value: 80, color: '#a29bfe', r: 17, rare: true },
+            { name: 'Tesoro', value: 120, color: '#e17055', r: 13, rare: true },
         ];
 
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 15; i++) {
             const t = types[Math.floor(Math.random() * types.length)];
             this.prizes.push({
                 ...t,
-                x: this.machine.glassLeft + 40 + Math.random() * (this.machine.glassW - 80),
-                y: this.machine.glassTop + 110 + Math.random() * (this.machine.glassH - 150),
-                vx: (Math.random() - 0.5) * 0.6,
-                vy: (Math.random() - 0.5) * 0.5,
+                x: this.machine.glassLeft + 35 + Math.random() * (this.machine.glassW - 70),
+                y: this.machine.glassTop + 100 + Math.random() * (this.machine.glassH - 140),
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.4,
                 grabbed: false,
                 id: i
             });
@@ -122,45 +121,45 @@ class ClawMachineGame {
         const my = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
 
         if (this.showDiscordPrompt) {
-            const pw = Math.min(500, this.width * 0.9);
+            const pw = Math.min(480, this.width * 0.9);
             const px = (this.width - pw) / 2;
             const py = this.height * 0.18;
-            if (mx > px + 40 && mx < px + pw - 40 && my > py + 140 && my < py + 195) {
+            if (mx > px + 35 && mx < px + pw - 35 && my > py + 135 && my < py + 185) {
                 this.attemptsLeft = this.maxAttempts;
                 this.showDiscordPrompt = false;
                 this.message = 'Grazie! +5 tentativi sbloccati ❤️';
-                this.messageTimer = 100;
+                this.messageTimer = 90;
             }
             return;
         }
 
-        const btnW = this.isTouchDevice ? 220 : 190;
-        const btnH = this.isTouchDevice ? 85 : 75;
-        const btnX = this.width - btnW - 20;
-        const btnY = this.height - btnH - 30;
+        const btnW = this.isTouchDevice ? 210 : 180;
+        const btnH = this.isTouchDevice ? 80 : 70;
+        const btnX = this.width - btnW - 18;
+        const btnY = this.height - btnH - 25;
 
         if (mx > btnX && mx < btnX + btnW && my > btnY && my < btnY + btnH) {
             this._btnPressed = true;
-            setTimeout(() => this._btnPressed = false, 110);
+            setTimeout(() => this._btnPressed = false, 100);
             if (this.claw.state === 'IDLE') this._startDrop();
             return;
         }
 
-        const rX = btnX - 125;
-        const rY = btnY + 12;
-        if (mx > rX && mx < rX + 110 && my > rY && my < rY + 52) {
+        const rX = btnX - 120;
+        const rY = btnY + 10;
+        if (mx > rX && mx < rX + 105 && my > rY && my < rY + 50) {
             this._resetMachine();
             return;
         }
 
         if (this.claw.state === 'IDLE') {
-            if (mx < this.width * 0.2) {
+            if (mx < this.width * 0.18) {
                 this.mobileKeys.left = true;
-                setTimeout(() => this.mobileKeys.left = false, 140);
-            } else if (mx > this.width * 0.8) {
+                setTimeout(() => this.mobileKeys.left = false, 130);
+            } else if (mx > this.width * 0.82) {
                 this.mobileKeys.right = true;
-                setTimeout(() => this.mobileKeys.right = false, 140);
-            } else if (my > this.height * 0.55) {
+                setTimeout(() => this.mobileKeys.right = false, 130);
+            } else if (my > this.height * 0.52) {
                 this._startDrop();
             }
         }
@@ -183,15 +182,13 @@ class ClawMachineGame {
         if (this.claw.state !== 'IDLE') return;
         this._genPrizes();
         this.message = 'Macchina ricaricata!';
-        this.messageTimer = 60;
+        this.messageTimer = 55;
     }
 
     update() {
         if (!this.running) return;
-
         const mk = this.mobileKeys;
 
-        // === MOVIMENTO GANCIO (solo quando IDLE o MOVING) ===
         if (this.claw.state === 'IDLE' || this.claw.state === 'MOVING') {
             let move = 0;
             if (this.keys['ArrowLeft'] || this.keys['KeyA'] || mk.left) move -= 1;
@@ -199,36 +196,30 @@ class ClawMachineGame {
 
             if (move !== 0) {
                 this.claw.state = 'MOVING';
-                this.claw.targetX = Math.max(
-                    this.machine.glassLeft + 35,
-                    Math.min(this.machine.glassLeft + this.machine.glassW - 35, this.claw.x + move * this.claw.speed)
-                );
+                this.claw.targetX = Math.max(this.machine.glassLeft + 30, Math.min(this.machine.glassLeft + this.machine.glassW - 30, this.claw.x + move * this.claw.speed));
             } else if (this.claw.state === 'MOVING') {
                 this.claw.state = 'IDLE';
             }
         }
 
         if (this.claw.state === 'IDLE' || this.claw.state === 'MOVING') {
-            this.claw.x += (this.claw.targetX - this.claw.x) * 0.22;
+            this.claw.x += (this.claw.targetX - this.claw.x) * 0.2;
         }
 
-        // === STATI DEL GANCIO ===
         switch (this.claw.state) {
             case 'DROPPING':
                 this.claw.armLength += this.claw.dropSpeed;
                 if (this.claw.armLength >= this.claw.maxArmLength) {
                     this.claw.armLength = this.claw.maxArmLength;
                     this.claw.state = 'GRABBING';
-                    this.claw.grabOffset = 11;
-                    setTimeout(() => this._tryGrab(), 130);
+                    this.claw.grabOffset = 10;
+                    setTimeout(() => this._tryGrab(), 120);
                 }
                 break;
 
             case 'GRABBING':
-                this.claw.grabOffset = Math.max(0, this.claw.grabOffset - 1.2);
-                if (this.claw.grabOffset <= 0) {
-                    this.claw.state = 'RETRACTING';
-                }
+                this.claw.grabOffset = Math.max(0, this.claw.grabOffset - 1.1);
+                if (this.claw.grabOffset <= 0) this.claw.state = 'RETRACTING';
                 break;
 
             case 'RETRACTING':
@@ -241,21 +232,20 @@ class ClawMachineGame {
                 break;
         }
 
-        // Fisica premi
         this.prizes.forEach(p => {
             if (p.grabbed) {
                 p.x = this.claw.x;
-                p.y = this.machine.top + 58 + this.claw.armLength - 4;
+                p.y = this.machine.top + 55 + this.claw.armLength - 3;
             } else {
                 p.x += p.vx;
                 p.y += p.vy;
-                p.vy += 0.035;
-                if (p.y > this.machine.glassTop + this.machine.glassH - 24) {
-                    p.y = this.machine.glassTop + this.machine.glassH - 24;
+                p.vy += 0.03;
+                if (p.y > this.machine.glassTop + this.machine.glassH - 22) {
+                    p.y = this.machine.glassTop + this.machine.glassH - 22;
                     p.vy *= -0.3;
                 }
-                p.vx *= 0.96;
-                p.vy *= 0.96;
+                p.vx *= 0.95;
+                p.vy *= 0.95;
             }
         });
 
@@ -267,12 +257,12 @@ class ClawMachineGame {
         let closest = null;
         let minDist = 999;
         const cx = this.claw.x;
-        const cy = this.machine.top + 58 + this.claw.armLength;
+        const cy = this.machine.top + 55 + this.claw.armLength;
 
         this.prizes.forEach(p => {
             if (p.grabbed) return;
             const dist = Math.hypot(p.x - cx, p.y - cy);
-            if (dist < minDist && dist < p.r + 26) {
+            if (dist < minDist && dist < p.r + 24) {
                 minDist = dist;
                 closest = p;
             }
@@ -282,17 +272,17 @@ class ClawMachineGame {
             closest.grabbed = true;
             this._winPrize(closest);
         } else {
-            this._particle(cx, cy, 0, 2, '#888', 14);
+            this._particle(cx, cy, 0, 1.8, '#888', 12);
         }
     }
 
     _winPrize(prize) {
-        const isSpecial = prize.rare && Math.random() < 0.32;
+        const isSpecial = prize.rare && Math.random() < 0.3;
         let amount = prize.value;
         let msg = `Hai vinto: ${prize.name} (+${amount} coins)`;
 
         if (isSpecial || Math.random() < 0.05) {
-            amount = 260;
+            amount = 280;
             msg = '🎉 HAI VINTO IL RUOLO CUSTOM!';
             this._sendWebhookLog(prize.name);
         }
@@ -301,28 +291,28 @@ class ClawMachineGame {
         this.score += Math.floor(amount * 0.7);
         this.totalWon += amount;
         this.message = msg;
-        this.messageTimer = 120;
+        this.messageTimer = 110;
 
         const col = isSpecial ? '#f9ca24' : prize.color;
-        for (let i = 0; i < (isSpecial ? 42 : 20); i++) {
+        for (let i = 0; i < (isSpecial ? 38 : 18); i++) {
             const a = Math.random() * Math.PI * 2;
-            const spd = 1.5 + Math.random() * 3.2;
-            this._particle(this.claw.x, this.machine.top + 75 + this.claw.armLength,
-                Math.cos(a) * spd, Math.sin(a) * spd - 1.5, col, 38);
+            const spd = 1.4 + Math.random() * 3;
+            this._particle(this.claw.x, this.machine.top + 70 + this.claw.armLength,
+                Math.cos(a) * spd, Math.sin(a) * spd - 1.4, col, 35);
         }
 
         setTimeout(() => {
             this.prizes = this.prizes.filter(p => p.id !== prize.id);
             if (this.prizes.length < 5) this._genPrizes();
-        }, 550);
+        }, 500);
     }
 
     _releasePrize() {
         this.prizes.forEach(p => {
             if (p.grabbed) {
                 p.grabbed = false;
-                p.vx = (Math.random() - 0.5) * 3.2;
-                p.vy = -1.5;
+                p.vx = (Math.random() - 0.5) * 2.8;
+                p.vy = -1.4;
             }
         });
     }
@@ -335,7 +325,7 @@ class ClawMachineGame {
         this.particles = this.particles.filter(p => {
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.08;
+            p.vy += 0.07;
             p.life--;
             return p.life > 0;
         });
@@ -362,31 +352,31 @@ class ClawMachineGame {
 
         // Cabinet
         c.fillStyle = '#1f2533';
-        c.fillRect(this.machine.left, this.machine.top - 8, this.machine.width, this.machine.height + 40);
+        c.fillRect(this.machine.left, this.machine.top - 5, this.machine.width, this.machine.height + 35);
         c.strokeStyle = '#f9ca24';
         c.lineWidth = 5;
-        c.strokeRect(this.machine.left, this.machine.top - 8, this.machine.width, this.machine.height + 40);
+        c.strokeRect(this.machine.left, this.machine.top - 5, this.machine.width, this.machine.height + 35);
 
         // Glass
         c.fillStyle = 'rgba(15,20,35,0.4)';
         c.fillRect(this.machine.glassLeft, this.machine.glassTop, this.machine.glassW, this.machine.glassH);
-        c.strokeStyle = 'rgba(249,202,36,0.6)';
+        c.strokeStyle = 'rgba(249,202,36,0.55)';
         c.lineWidth = 3;
         c.strokeRect(this.machine.glassLeft, this.machine.glassTop, this.machine.glassW, this.machine.glassH);
 
         // Floor
         c.fillStyle = '#2d3446';
-        c.fillRect(this.machine.glassLeft + 5, this.machine.glassTop + this.machine.glassH - 22, this.machine.glassW - 10, 18);
+        c.fillRect(this.machine.glassLeft + 4, this.machine.glassTop + this.machine.glassH - 20, this.machine.glassW - 8, 16);
 
         // Prizes
         this.prizes.forEach(p => {
             c.save();
             c.translate(p.x, p.y);
-            if (p.grabbed) c.rotate(Math.sin(Date.now() / 150) * 0.07);
+            if (p.grabbed) c.rotate(Math.sin(Date.now() / 140) * 0.06);
 
             c.fillStyle = 'rgba(0,0,0,0.3)';
             c.beginPath();
-            c.ellipse(3, p.r + 4, p.r * 0.8, 4, 0, 0, Math.PI * 2);
+            c.ellipse(3, p.r + 3, p.r * 0.75, 3.5, 0, 0, Math.PI * 2);
             c.fill();
 
             c.fillStyle = p.color;
@@ -394,16 +384,16 @@ class ClawMachineGame {
             c.arc(0, 0, p.r, 0, Math.PI * 2);
             c.fill();
 
-            c.fillStyle = 'rgba(255,255,255,0.35)';
+            c.fillStyle = 'rgba(255,255,255,0.3)';
             c.beginPath();
-            c.arc(-p.r * 0.3, -p.r * 0.3, p.r * 0.35, 0, Math.PI * 2);
+            c.arc(-p.r * 0.28, -p.r * 0.28, p.r * 0.32, 0, Math.PI * 2);
             c.fill();
             c.restore();
         });
 
         // Claw
-        const baseY = this.machine.top + 38;
-        c.strokeStyle = '#ddd';
+        const baseY = this.machine.top + 35;
+        c.strokeStyle = '#ccc';
         c.lineWidth = 5;
         c.beginPath();
         c.moveTo(this.claw.x, baseY);
@@ -412,18 +402,18 @@ class ClawMachineGame {
 
         const cy = baseY + this.claw.armLength;
         c.fillStyle = '#f9ca24';
-        c.fillRect(this.claw.x - 13, cy - 5, 26, 10);
+        c.fillRect(this.claw.x - 12, cy - 4, 24, 8);
 
         const open = this.claw.state === 'GRABBING' ? this.claw.grabOffset : 0;
-        c.strokeStyle = '#eee';
+        c.strokeStyle = '#ddd';
         c.lineWidth = 4;
         c.beginPath();
-        c.moveTo(this.claw.x - 7, cy + 3);
-        c.lineTo(this.claw.x - 13 - open, cy + 17);
+        c.moveTo(this.claw.x - 6, cy + 2);
+        c.lineTo(this.claw.x - 11 - open, cy + 15);
         c.stroke();
         c.beginPath();
-        c.moveTo(this.claw.x + 7, cy + 3);
-        c.lineTo(this.claw.x + 13 + open, cy + 17);
+        c.moveTo(this.claw.x + 6, cy + 2);
+        c.lineTo(this.claw.x + 11 + open, cy + 15);
         c.stroke();
 
         // Particles
@@ -431,7 +421,7 @@ class ClawMachineGame {
             c.globalAlpha = p.life / p.maxLife;
             c.fillStyle = p.color;
             c.beginPath();
-            c.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+            c.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
             c.fill();
         });
         c.globalAlpha = 1;
@@ -439,112 +429,112 @@ class ClawMachineGame {
         this._drawHUD(c);
 
         if (this.message && this.messageTimer > 0) {
-            const alpha = Math.min(1, this.messageTimer / 32);
+            const alpha = Math.min(1, this.messageTimer / 30);
             c.fillStyle = `rgba(10,12,20,${0.9 * alpha})`;
-            c.fillRect(this.width/2 - 230, 58, 460, 55);
+            c.fillRect(this.width/2 - 220, 55, 440, 50);
             c.strokeStyle = this.message.includes('RUOLO') ? '#f9ca24' : '#55efc4';
             c.lineWidth = 3;
-            c.strokeRect(this.width/2 - 230, 58, 460, 55);
+            c.strokeRect(this.width/2 - 220, 55, 440, 50);
 
             c.fillStyle = this.message.includes('RUOLO') ? '#f9ca24' : '#fff';
-            c.font = 'bold 17px Inter, system-ui';
+            c.font = 'bold 16px Inter, system-ui';
             c.textAlign = 'center';
-            c.fillText(this.message, this.width/2, 88);
+            c.fillText(this.message, this.width/2, 82);
         }
 
         if (this.showGuide) this._drawGuide(c);
 
         if (this.showDiscordPrompt) {
-            const pw = Math.min(480, this.width * 0.9);
+            const pw = Math.min(460, this.width * 0.9);
             const px = (this.width - pw) / 2;
             const py = this.height * 0.18;
 
             c.fillStyle = 'rgba(10,12,20,0.97)';
-            c.fillRect(px, py, pw, 220);
+            c.fillRect(px, py, pw, 210);
             c.strokeStyle = '#f9ca24';
             c.lineWidth = 4;
-            c.strokeRect(px, py, pw, 220);
+            c.strokeRect(px, py, pw, 210);
 
             c.fillStyle = '#f9ca24';
-            c.font = 'bold 17px Inter, system-ui';
+            c.font = 'bold 16px Inter, system-ui';
             c.textAlign = 'center';
-            c.fillText('TENTATIVI ESAURITI', this.width/2, py + 32);
+            c.fillText('TENTATIVI ESAURITI', this.width/2, py + 30);
 
             c.fillStyle = '#ddd';
-            c.font = '14px Inter, system-ui';
-            c.fillText('Scrivi almeno 8 messaggi su Discord', this.width/2, py + 62);
-            c.fillText('per sbloccare altri 5 tentativi', this.width/2, py + 82);
+            c.font = '13px Inter, system-ui';
+            c.fillText('Scrivi almeno 8 messaggi su Discord', this.width/2, py + 58);
+            c.fillText('per sbloccare altri 5 tentativi', this.width/2, py + 76);
 
             c.fillStyle = '#55efc4';
-            c.fillRect(px + 35, py + 108, pw - 70, 46);
+            c.fillRect(px + 30, py + 100, pw - 60, 44);
             c.strokeStyle = '#fff';
             c.lineWidth = 3;
-            c.strokeRect(px + 35, py + 108, pw - 70, 46);
+            c.strokeRect(px + 30, py + 100, pw - 60, 44);
 
             c.fillStyle = '#111';
-            c.font = 'bold 14px Inter, system-ui';
-            c.fillText('HO SCRITTO I MESSAGGI! +5 TENTATIVI', this.width/2, py + 137);
+            c.font = 'bold 13px Inter, system-ui';
+            c.fillText('HO SCRITTO I MESSAGGI! +5 TENTATIVI', this.width/2, py + 128);
         }
     }
 
     _drawHUD(c) {
         c.fillStyle = 'rgba(15,18,28,0.95)';
-        c.fillRect(0, 0, this.width, 50);
+        c.fillRect(0, 0, this.width, 48);
         c.strokeStyle = 'rgba(249,202,36,0.3)';
         c.lineWidth = 1;
         c.beginPath();
-        c.moveTo(0, 50);
-        c.lineTo(this.width, 50);
+        c.moveTo(0, 48);
+        c.lineTo(this.width, 48);
         c.stroke();
 
         c.fillStyle = '#f9ca24';
-        c.font = 'bold 17px Inter, system-ui';
+        c.font = 'bold 16px Inter, system-ui';
         c.textAlign = 'left';
-        c.fillText('🎰 MACCHINA A GANCIO', 16, 30);
+        c.fillText('🎰 MACCHINA A GANCIO', 15, 28);
 
         c.fillStyle = '#55efc4';
-        c.font = 'bold 15px Inter, system-ui';
-        c.fillText(`$ ${this.credits}`, this.width - 130, 30);
+        c.font = 'bold 14px Inter, system-ui';
+        c.fillText(`$ ${this.credits}`, this.width - 120, 28);
 
         const attColor = this.attemptsLeft > 2 ? '#55efc4' : this.attemptsLeft > 0 ? '#f9ca24' : '#d63031';
         c.fillStyle = attColor;
-        c.font = 'bold 12px Inter, system-ui';
-        c.fillText(`Tentativi: ${this.attemptsLeft}/${this.maxAttempts}`, this.width - 130, 45);
+        c.font = 'bold 11px Inter, system-ui';
+        c.fillText(`Tentativi: ${this.attemptsLeft}/${this.maxAttempts}`, this.width - 120, 43);
     }
 
     _drawGuide(c) {
-        const gw = Math.min(460, this.width * 0.9);
+        const gw = Math.min(440, this.width * 0.9);
         const gx = (this.width - gw) / 2;
-        const gy = this.height * 0.1;
+        const gy = this.height * 0.08;
 
         c.fillStyle = 'rgba(10,12,20,0.96)';
-        c.fillRect(gx, gy, gw, 260);
+        c.fillRect(gx, gy, gw, 250);
         c.strokeStyle = '#a29bfe';
         c.lineWidth = 3;
-        c.strokeRect(gx, gy, gw, 260);
+        c.strokeRect(gx, gy, gw, 250);
 
         c.fillStyle = '#a29bfe';
-        c.font = 'bold 17px Inter, system-ui';
+        c.font = 'bold 16px Inter, system-ui';
         c.textAlign = 'center';
-        c.fillText('COME SI GIOCA', this.width/2, gy + 26);
+        c.fillText('COME SI GIOCA', this.width/2, gy + 24);
 
         c.fillStyle = '#ddd';
-        c.font = '14px Inter, system-ui';
+        c.font = '13px Inter, system-ui';
         c.textAlign = 'left';
         const lines = [
             '• Muovi il gancio con ← → o toccando i lati',
             '• Tocca il pulsante giallo per lanciare',
             '• Il gancio si chiude da solo',
-            '• Vinci coins e ruoli custom!',
+            '• Vinci coins e ruoli custom su Discord!',
             '• Ogni lancio costa 200 crediti',
             '• R = Ricarica la macchina'
         ];
-        lines.forEach((line, i) => c.fillText(line, gx + 20, gy + 55 + i * 22));
+        lines.forEach((line, i) => c.fillText(line, gx + 18, gy + 52 + i * 20));
 
         c.fillStyle = '#888';
-        c.font = '13px Inter, system-ui';
+        c.font = '12px Inter, system-ui';
         c.textAlign = 'center';
-        c.fillText('Premi ? o ESC per chiudere', this.width/2, gy + 240);
+        c.fillText('Premi ? o ESC per chiudere', this.width/2, gy + 230);
     }
 
     loop() {
