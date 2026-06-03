@@ -1,8 +1,6 @@
 /**
  * GALAXY WORLD - Space Economy Arcade Game v5
  * Free camera · Zoom · Guide · Android 14 vector style
- *
- * + MACCHINA A GANCIO mini-game ready (see macchina-a-gancio.html)
  */
 
 const GITHUB_REPO = 'OrderBot-web/OrderBot-web.github.io';
@@ -14,13 +12,13 @@ class SpaceGame {
         this.ctx    = this.canvas.getContext('2d');
         this.resize();
 
-        // ── Physics ────────────────────────────────────────────────────────
+        // Physics
         this.G         = 0.38;
         this.friction  = 0.997;
         this.baseAccel = 0.22;
         this.mapLimit  = 2600;
 
-        // ── State ──────────────────────────────────────────────────────────
+        // State
         this.running      = false;
         this.score        = 0;
         this.credits      = 3000;
@@ -38,13 +36,13 @@ class SpaceGame {
         this.stars        = this._genStars(260);
         this.sun          = { x: 0, y: 0, size: 32 };
 
-        // ── Free camera ────────────────────────────────────────────────────
+        // Free camera
         this.camera = { x: 0, y: 0, zoom: 0.44, targetZoom: 0.44, panX: 0, panY: 0 };
         this._isPanning   = false;
         this._lastPan     = { x: 0, y: 0 };
         this._pinchDist   = 0;
 
-        // ── City founding ──────────────────────────────────────────────────
+        // City founding
         this.launchState   = 'CHOOSE_CITY';
         this.launchTimer   = 0;
         this.hoveredBody   = null;
@@ -52,7 +50,7 @@ class SpaceGame {
         this.homeBody      = null;
         this.foundingTimer = 0;
 
-        // ── Planets ────────────────────────────────────────────────────────
+        // Planets & Moons
         this.planets = [
             { id:'mercurio', name:'MERCURIO', dist:110,  size:6,  color:'#b2bec3', speed:0.016,  res:'SOLARE',       req:'FILTRI',    deliveries:0, crisis:null },
             { id:'venere',   name:'VENERE',   dist:170,  size:9,  color:'#e17055', speed:0.009,  res:'ACIDO',        req:'CIBO',      deliveries:0, crisis:null },
@@ -63,6 +61,7 @@ class SpaceGame {
             { id:'urano',    name:'URANO',    dist:1130, size:16, color:'#81ecec', speed:0.0005, res:'DIAMANTI',    req:'GAS',       deliveries:0, crisis:null },
             { id:'nettuno',  name:'NETTUNO',  dist:1450, size:16, color:'#6c5ce7', speed:0.0003, res:'ENERGIA',     req:'DIAMANTI',  deliveries:0, crisis:null },
         ];
+
         this.moons = [
             { id:'luna',     name:'LUNA',     parent:'terra',   dist:32, size:5,  color:'#dfe6e9', speed:0.030, res:'ELIO-3',      req:'CIBO',     deliveries:0, crisis:null },
             { id:'phobos',   name:'PHOBOS',   parent:'marte',   dist:22, size:3,  color:'#b2bec3', speed:0.080, res:'ACQUA',       req:'FERRO',    deliveries:0, crisis:null },
@@ -76,6 +75,7 @@ class SpaceGame {
             { id:'titania',  name:'TITANIA',  parent:'urano',   dist:52, size:5,  color:'#81ecec', speed:0.028, res:'CRISTALLI',  req:'ENERGIA',  deliveries:0, crisis:null },
             { id:'tritone',  name:'TRITONE',  parent:'nettuno', dist:46, size:5,  color:'#74b9ff', speed:0.025, res:'AZOTO',      req:'DIAMANTI', deliveries:0, crisis:null },
         ];
+
         this.allBodies = [...this.planets, ...this.moons];
 
         this.asteroids = Array.from({ length:52 }, (_,i) => {
@@ -109,8 +109,6 @@ class SpaceGame {
 
         this.init();
     }
-
-    // ── Setup ────────────────────────────────────────────────────────────────
 
     _genStars(n) {
         return Array.from({ length:n }, () => ({
@@ -148,15 +146,10 @@ class SpaceGame {
                 if (e.code==='Digit2') this.hireNPC(1);
                 if (e.code==='Digit3') this.hireNPC(2);
             }
-
-            // NEW: Launch Claw Machine mini-game (C key)
-            if (e.code === 'KeyC' && (s === 'PLAY' || s === 'CHOOSE_CITY')) {
-                this._launchClawMachine();
-            }
         });
         window.addEventListener('keyup', e => { this.keys[e.code]=false; });
 
-        // ── Zoom ───────────────────────────────────────────────────────────
+        // Zoom
         this.canvas.addEventListener('wheel', e => {
             e.preventDefault();
             const factor = e.deltaY > 0 ? 0.88 : 1/0.88;
@@ -172,7 +165,7 @@ class SpaceGame {
             this.camera.targetZoom = newZ;
         }, { passive:false });
 
-        // ── Right-click pan ────────────────────────────────────────────────
+        // Right-click pan
         this.canvas.addEventListener('mousedown', e => {
             if (e.button===2) {
                 this._isPanning = true;
@@ -191,7 +184,7 @@ class SpaceGame {
         window.addEventListener('mouseup', e => { if (e.button===2) this._isPanning=false; });
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-        // ── Click (choose city) ────────────────────────────────────────────
+        // Click (choose city)
         this.canvas.addEventListener('click', e => {
             if (this.launchState!=='CHOOSE_CITY') return;
             const b = this._bodyAtScreen(e.clientX, e.clientY);
@@ -200,7 +193,7 @@ class SpaceGame {
             }
         });
 
-        // ── Touch ──────────────────────────────────────────────────────────
+        // Touch
         this.canvas.addEventListener('touchstart', e => { this._processTouches(e, true);  }, { passive:false });
         this.canvas.addEventListener('touchmove',  e => { this._processTouches(e, false); }, { passive:false });
         this.canvas.addEventListener('touchend',   e => {
@@ -219,20 +212,7 @@ class SpaceGame {
         if (submitBtn) submitBtn.addEventListener('click', () => this.submitScore());
     }
 
-    // NEW: Launch Claw Machine mini-game
-    _launchClawMachine() {
-        // Option 1: Open as separate page (recommended for now)
-        if (confirm('Aprire la MACCHINA A GANCIO in una nuova finestra?')) {
-            window.open('macchina-a-gancio.html', '_blank');
-        }
-        
-        // Option 2 (future): Switch to claw mode on same canvas
-        // this.launchState = 'CLAW_MACHINE';
-        // new ClawMachine(this.canvas).start();
-    }
-
-    // ── Mobile controls ──────────────────────────────────────────────────────
-
+    // Mobile buttons
     _getMobileButtons() {
         if (this._mbCache && this._mbW===this.width && this._mbH===this.height) return this._mbCache;
         const s  = Math.min(this.width, this.height);
@@ -300,8 +280,6 @@ class SpaceGame {
         if (this.launchState==='CHOOSE_CITY' && aimTouch) this.hoveredBody=this._bodyAtScreen(aimTouch.clientX, aimTouch.clientY);
     }
 
-    // ── Coordinate helpers ───────────────────────────────────────────────────
-
     _worldFromScreen(sx, sy) {
         return { x:(sx-this.camera.x)/this.camera.zoom, y:(sy-this.camera.y)/this.camera.zoom };
     }
@@ -313,8 +291,6 @@ class SpaceGame {
             return d < Math.max(b.size*3.5, 28/this.camera.zoom);
         }) || null;
     }
-
-    // ── City Founding ────────────────────────────────────────────────────────
 
     _foundCity(body) {
         body.deliveries=3; body.isHome=true; this.homeBody=body;
@@ -331,8 +307,6 @@ class SpaceGame {
         }
     }
 
-    // ── Fleet ────────────────────────────────────────────────────────────────
-
     hireNPC(idx) {
         const def=this.pilotRoster[idx];
         if (!def||this.credits<def.cost) return;
@@ -344,8 +318,6 @@ class SpaceGame {
                           state:'pickup', cargo:null, fromId:from.id, toId:to.id});
         this.showHireMenu=false;
     }
-
-    // ── Economy ──────────────────────────────────────────────────────────────
 
     spawnCrisis() {
         const cands=this.allBodies.filter(b=>!b.crisis);
@@ -372,8 +344,6 @@ class SpaceGame {
         }
         this.ship.vx*=-0.15; this.ship.vy*=-0.15;
     }
-
-    // ── Update ───────────────────────────────────────────────────────────────
 
     start() { this.running=true; this.loop(); }
 
@@ -535,8 +505,6 @@ class SpaceGame {
     _particle(x,y,vx,vy,color,life) { this.particles.push({x,y,vx,vy,color,life,maxLife:life}); }
     _updateParticles() { this.particles=this.particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;return p.life>0;}); }
 
-    // ── Draw ─────────────────────────────────────────────────────────────────
-
     _citySize(body) {
         const d=body.deliveries;
         if (d>=15) return body.size+7;
@@ -689,8 +657,6 @@ class SpaceGame {
         }
     }
 
-    // ── HUDs ─────────────────────────────────────────────────────────────────
-
     _drawChooseCityHUD() {
         const c=this.ctx;
         if (this.isTouchDevice) this._drawMobileButtons();
@@ -743,7 +709,7 @@ class SpaceGame {
         c.fillStyle='#55efc4'; c.font='13px "Inter",sans-serif';
         c.fillText(`PILOTI: ${this.pilots.length}`, this.width-22, 36);
         c.fillStyle='rgba(255,255,255,0.3)'; c.font='11px "Inter",sans-serif';
-        c.fillText('[H] flotta  [G] segui nave  [?] guida  [C] Macchina a Gancio', this.width-22, 54);
+        c.fillText('[H] flotta  [G] segui nave  [?] guida', this.width-22, 54);
         if (this.homeBody) { c.fillStyle='#f9ca24'; c.font='12px "Inter",sans-serif'; c.fillText(`⬡ ${this.homeBody.name}`, this.width-22, 72); }
 
         c.fillStyle='rgba(255,255,255,0.25)'; c.font='11px "Inter",sans-serif'; c.textAlign='right';
@@ -841,8 +807,6 @@ class SpaceGame {
         });
     }
 
-    // ── Guide overlay ─────────────────────────────────────────────────────────
-
     _drawGuide() {
         const c=this.ctx;
         const gw=720, gh=460, gx=this.width/2-gw/2, gy=this.height/2-gh/2;
@@ -871,7 +835,6 @@ class SpaceGame {
             ['G','Ricentra la visuale sulla nave'],
             ['H','Apri menu assumi pilota'],
             ['?','Apri / chiudi questa guida'],
-            ['C','MACCHINA A GANCIO (mini-gioco)'],
             ['Logo × 5','Esci dal minigioco'],
             ['ENTER / doppio click','Conferma fondazione città'],
         ];
@@ -898,7 +861,6 @@ class SpaceGame {
             ['','7 consegne → Città  ·  15 → Metropoli'],
             ['👨‍✈️ Flotta','ROOKIE $800 · SPERICOLATO $1500'],
             ['','VETERANO $3000 (evita la fascia)'],
-            ['🦾 Claw','Mini-gioco separato (tasto C)'],
         ];
         mech.forEach(([key,desc],i) => {
             const y=startY+i*rowH;
@@ -910,8 +872,6 @@ class SpaceGame {
         c.fillStyle='rgba(255,255,255,0.25)'; c.font='12px "Inter",sans-serif'; c.textAlign='center';
         c.fillText('[?]  o  [ESC]  per chiudere', this.width/2, gy+gh-16);
     }
-
-    // ── Game Over ────────────────────────────────────────────────────────────
 
     gameOver(reason) {
         if (!this.running) return;
@@ -965,7 +925,7 @@ class SpaceGame {
     loop() { if (!this.running) return; this.update(); this.draw(); requestAnimationFrame(()=>this.loop()); }
 }
 
-// ── Secret Trigger (Space Game) ─────────────────────────────────────────────
+// Secret Trigger
 let _clicks=0;
 const secretTrigger = document.getElementById('secret-trigger');
 if (secretTrigger) {
@@ -979,10 +939,3 @@ if (secretTrigger) {
         }
     });
 }
-
-// ── MACCHINA A GANCIO ────────────────────────────────────────────────────────
-// The full claw machine mini-game is in macchina-a-gancio.html
-// It can be launched with the C key from inside the Space Game (see _launchClawMachine above)
-// or directly from your hub / index.html with a button linking to macchina-a-gancio.html
-
-console.log('%c[Galaxy World] game.js loaded. Press C in-game to launch MACCHINA A GANCIO mini-game.', 'color:#f9ca24');
