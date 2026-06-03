@@ -1,6 +1,8 @@
 /**
  * GALAXY WORLD - Space Economy Arcade Game v5
  * Free camera · Zoom · Guide · Android 14 vector style
+ *
+ * + MACCHINA A GANCIO mini-game ready (see macchina-a-gancio.html)
  */
 
 const GITHUB_REPO = 'OrderBot-web/OrderBot-web.github.io';
@@ -37,7 +39,6 @@ class SpaceGame {
         this.sun          = { x: 0, y: 0, size: 32 };
 
         // ── Free camera ────────────────────────────────────────────────────
-        // zoom = screen pixels per world unit
         this.camera = { x: 0, y: 0, zoom: 0.44, targetZoom: 0.44, panX: 0, panY: 0 };
         this._isPanning   = false;
         this._lastPan     = { x: 0, y: 0 };
@@ -133,23 +134,24 @@ class SpaceGame {
             this.keys[e.code] = true;
             const s = this.launchState;
 
-            // Guide toggle
             if (e.key === '?' || e.code === 'Slash') { this.showGuide = !this.showGuide; return; }
             if (e.code === 'Escape') { this.showGuide = false; this.showHireMenu = false; return; }
 
-            // Found city
             if ((e.code==='Enter'||e.code==='Space') && s==='CHOOSE_CITY' && this.selectedBody)
                 this._foundCity(this.selectedBody);
 
-            // Snap camera back to ship
             if (e.code==='KeyG' && s==='PLAY') { this.camera.panX=0; this.camera.panY=0; }
 
-            // Hire menu
             if (e.code==='KeyH' && s==='PLAY') this.showHireMenu=!this.showHireMenu;
             if (this.showHireMenu) {
                 if (e.code==='Digit1') this.hireNPC(0);
                 if (e.code==='Digit2') this.hireNPC(1);
                 if (e.code==='Digit3') this.hireNPC(2);
+            }
+
+            // NEW: Launch Claw Machine mini-game (C key)
+            if (e.code === 'KeyC' && (s === 'PLAY' || s === 'CHOOSE_CITY')) {
+                this._launchClawMachine();
             }
         });
         window.addEventListener('keyup', e => { this.keys[e.code]=false; });
@@ -163,14 +165,9 @@ class SpaceGame {
             const maxZ = isOver ? 1.2  : 12;
             const oldZ = this.camera.targetZoom;
             const newZ = Math.max(minZ, Math.min(maxZ, oldZ * factor));
-            // Zoom toward mouse cursor
             const mx = e.clientX, my = e.clientY;
-            // world point under mouse stays fixed:
-            // world = (screen - camera) / zoom  →  camera_new = screen - world * newZ
             const wx = (mx - this.camera.x) / oldZ;
             const wy = (my - this.camera.y) / oldZ;
-            // We'll adjust panX/panY after targetZoom change applies in update()
-            // Store the zoom anchor for smooth interpolation
             this._zoomAnchor = { mx, my, wx, wy, fromZ: oldZ, toZ: newZ };
             this.camera.targetZoom = newZ;
         }, { passive:false });
@@ -208,7 +205,6 @@ class SpaceGame {
         this.canvas.addEventListener('touchmove',  e => { this._processTouches(e, false); }, { passive:false });
         this.canvas.addEventListener('touchend',   e => {
             this._processTouches(e, false);
-            // CHOOSE_CITY: tap on a body (not on a button)
             if (this.launchState==='CHOOSE_CITY' && e.changedTouches[0]) {
                 const ct=e.changedTouches[0];
                 if (!this._touchOnButton(ct.clientX, ct.clientY)) {
@@ -219,24 +215,34 @@ class SpaceGame {
         }, { passive:false });
 
         this.crisisInterval = setInterval(() => { if (this.running && this.launchState==='PLAY') this.spawnCrisis(); }, 13000);
-        document.getElementById('submit-score-btn').addEventListener('click', () => this.submitScore());
+        const submitBtn = document.getElementById('submit-score-btn');
+        if (submitBtn) submitBtn.addEventListener('click', () => this.submitScore());
+    }
+
+    // NEW: Launch Claw Machine mini-game
+    _launchClawMachine() {
+        // Option 1: Open as separate page (recommended for now)
+        if (confirm('Aprire la MACCHINA A GANCIO in una nuova finestra?')) {
+            window.open('macchina-a-gancio.html', '_blank');
+        }
+        
+        // Option 2 (future): Switch to claw mode on same canvas
+        // this.launchState = 'CLAW_MACHINE';
+        // new ClawMachine(this.canvas).start();
     }
 
     // ── Mobile controls ──────────────────────────────────────────────────────
 
     _getMobileButtons() {
-        // Recompute only on resize
         if (this._mbCache && this._mbW===this.width && this._mbH===this.height) return this._mbCache;
         const s  = Math.min(this.width, this.height);
-        const r  = Math.max(38, s * 0.072);   // base radius, scales with screen
+        const r  = Math.max(38, s * 0.072);
         const mg = r * 1.05;
-        const by = this.height - mg - r;       // bottom row y
+        const by = this.height - mg - r;
         this._mbCache = [
-            // Flight controls (only during gameplay)
             { id:'left',   cx: mg+r,          cy: by,        r,        key:'ArrowLeft',  label:'◀', flight:true  },
             { id:'right',  cx: mg+r*3.3,      cy: by,        r,        key:'ArrowRight', label:'▶', flight:true  },
             { id:'thrust', cx: this.width-mg-r*1.15, cy: by, r: r*1.15, key:'ArrowUp',   label:'▲', flight:true  },
-            // Utility (always)
             { id:'guide',  cx: this.width-mg-r*0.65, cy: mg+r*0.65, r: r*0.62, key:'guide', label:'?', toggle:true },
             { id:'snap',   cx: this.width-mg-r*0.65-r*1.75, cy: mg+r*0.65, r: r*0.62, key:'snap', label:'G', toggle:true },
         ];
@@ -250,9 +256,8 @@ class SpaceGame {
 
     _processTouches(e, isStart) {
         e.preventDefault();
-        this.isTouchDevice = true;  // confirm touch device on first touch
+        this.isTouchDevice = true;
 
-        // Pinch-to-zoom (2 fingers, no button logic)
         if (e.touches.length >= 2) {
             const dx=e.touches[0].clientX-e.touches[1].clientX;
             const dy=e.touches[0].clientY-e.touches[1].clientY;
@@ -292,7 +297,6 @@ class SpaceGame {
         this.mobileKeys=newKeys;
         this.isTouching = !!aimTouch && this.launchState==='PLAY';
         if (aimTouch) this.touchPos={x:aimTouch.clientX, y:aimTouch.clientY};
-        // CHOOSE_CITY hover update
         if (this.launchState==='CHOOSE_CITY' && aimTouch) this.hoveredBody=this._bodyAtScreen(aimTouch.clientX, aimTouch.clientY);
     }
 
@@ -377,19 +381,16 @@ class SpaceGame {
         if (!this.running) return;
         this._updateBodies();
 
-        // Smooth zoom with cursor anchor
         const prevZoom = this.camera.zoom;
         this.camera.zoom += (this.camera.targetZoom - this.camera.zoom) * 0.12;
         if (this._zoomAnchor && Math.abs(this.camera.zoom - prevZoom) > 0.0001) {
             const { mx, my, wx, wy } = this._zoomAnchor;
-            // base follow offset
             const baseX = this.launchState==='CHOOSE_CITY' || this.launchState==='FOUNDING'
                 ? (this.homeBody && this.launchState==='FOUNDING' ? -this.homeBody.x*this.camera.zoom+this.width/2 : this.width/2)
                 : -this.ship.x*this.camera.zoom+this.width/2;
             const baseY = this.launchState==='CHOOSE_CITY' || this.launchState==='FOUNDING'
                 ? (this.homeBody && this.launchState==='FOUNDING' ? -this.homeBody.y*this.camera.zoom+this.height/2 : this.height/2)
                 : -this.ship.y*this.camera.zoom+this.height/2;
-            // desired camera.x so world point wx stays at mx
             const desiredCX = mx - wx*this.camera.zoom;
             this.camera.panX = desiredCX - baseX;
             const desiredCY = my - wy*this.camera.zoom;
@@ -551,32 +552,26 @@ class SpaceGame {
         c.translate(this.camera.x, this.camera.y);
         c.scale(this.camera.zoom, this.camera.zoom);
 
-        // Stars
         this.stars.forEach(s => { c.globalAlpha=s.alpha; c.fillStyle='#fff'; c.beginPath(); c.arc(s.x,s.y,s.r,0,Math.PI*2); c.fill(); });
         c.globalAlpha=1;
 
-        // Orbit rings
         const orbitAlpha = this.launchState==='CHOOSE_CITY'?0.14:0.04;
         this.planets.forEach(p => {
             c.strokeStyle=`rgba(255,255,255,${orbitAlpha})`; c.lineWidth=0.6;
             c.beginPath(); c.arc(0,0,p.dist,0,Math.PI*2); c.stroke();
         });
 
-        // Sun
         const sg=c.createRadialGradient(0,0,0,0,0,this.sun.size*6);
         sg.addColorStop(0,'rgba(255,255,210,1)'); sg.addColorStop(0.15,'rgba(255,215,0,1)');
         sg.addColorStop(0.45,'rgba(255,140,0,0.45)'); sg.addColorStop(1,'rgba(255,80,0,0)');
         c.beginPath(); c.arc(0,0,this.sun.size*6,0,Math.PI*2); c.fillStyle=sg; c.fill();
         c.beginPath(); c.arc(0,0,this.sun.size,0,Math.PI*2); c.fillStyle='#fffde7'; c.fill();
 
-        // Asteroid belt
         this.asteroids.forEach(a => { c.globalAlpha=0.65; c.fillStyle=a.color; c.beginPath(); c.arc(a.x,a.y,a.size,0,Math.PI*2); c.fill(); });
         c.globalAlpha=1;
 
-        // Planets
         this.planets.forEach(p=>this._drawBody(c,p,false));
 
-        // Saturn rings
         const sat=this.planets.find(p=>p.id==='saturno');
         if (sat) {
             const sz=this._citySize(sat);
@@ -587,10 +582,8 @@ class SpaceGame {
             c.restore();
         }
 
-        // Moons
         this.moons.forEach(m=>this._drawBody(c,m,true));
 
-        // CHOOSE_CITY hover / selected
         if (this.launchState==='CHOOSE_CITY') {
             if (this.hoveredBody && this.hoveredBody.id!=='terra') {
                 const h=this.hoveredBody, sz=this._citySize(h);
@@ -608,7 +601,6 @@ class SpaceGame {
             }
         }
 
-        // Founding glow
         if (this.launchState==='FOUNDING' && this.homeBody) {
             const h=this.homeBody, sz=this._citySize(h), pct=this.foundingTimer/110;
             const fg=c.createRadialGradient(h.x,h.y,sz,h.x,h.y,sz*7*pct);
@@ -616,18 +608,15 @@ class SpaceGame {
             c.beginPath(); c.arc(h.x,h.y,sz*7,0,Math.PI*2); c.fillStyle=fg; c.fill();
         }
 
-        // Particles
         this.particles.forEach(p => { c.globalAlpha=(p.life/p.maxLife)*0.9; c.fillStyle=p.color; c.beginPath(); c.arc(p.x,p.y,1.2,0,Math.PI*2); c.fill(); });
         c.globalAlpha=1;
 
-        // NPC pilots
         this.pilots.forEach(pilot => {
             c.save(); c.translate(pilot.x,pilot.y); c.rotate(pilot.angle);
             c.fillStyle=pilot.color; c.beginPath(); c.moveTo(5,0); c.lineTo(-3,-3); c.lineTo(-3,3); c.closePath(); c.fill();
             c.restore();
         });
 
-        // Player ship (hidden in CHOOSE_CITY)
         if (this.launchState!=='CHOOSE_CITY') {
             c.save(); c.translate(this.ship.x,this.ship.y); c.rotate(this.ship.angle);
             c.fillStyle='#fff'; c.beginPath(); c.moveTo(10,0); c.lineTo(-6,-5); c.lineTo(-4,0); c.lineTo(-6,5); c.closePath(); c.fill();
@@ -635,7 +624,6 @@ class SpaceGame {
             c.restore();
         }
 
-        // Launch text
         c.textAlign='center';
         if (this.launchState==='COUNTDOWN') {
             c.fillStyle='rgba(255,255,255,0.9)'; c.font='bold 14px "Inter",sans-serif';
@@ -645,14 +633,12 @@ class SpaceGame {
             c.fillText('LANCIO!', this.ship.x, this.ship.y-22);
         }
 
-        // Ship arrow indicator (when panned far away, show direction back to ship)
         if (this.launchState==='PLAY' && (this.camera.panX!==0 || this.camera.panY!==0)) {
             this._drawShipArrow(c);
         }
 
-        c.restore(); // end world transform
+        c.restore();
 
-        // HUDs
         if      (this.launchState==='CHOOSE_CITY') this._drawChooseCityHUD();
         else if (this.launchState==='FOUNDING')    this._drawFoundingHUD();
         else                                        this._drawHUD();
@@ -660,21 +646,17 @@ class SpaceGame {
         if (this.showGuide)    this._drawGuide();
     }
 
-    // Ship arrow when panned away — drawn in world space before restore
     _drawShipArrow(_c) {
         const screenShipX=this.ship.x;
         const screenShipY=this.ship.y;
-        // Only show if ship would be off screen
-        const sx=screenShipX*this.camera.zoom+this.camera.x; // screen x of ship
+        const sx=screenShipX*this.camera.zoom+this.camera.x;
         const sy=screenShipY*this.camera.zoom+this.camera.y;
         if (sx>0&&sx<this.width&&sy>0&&sy<this.height) return;
-        // Draw in screen space after restore - so we store info and draw later
         this._pendingShipArrow={sx,sy};
     }
 
     _drawBody(c, body, isMoon) {
         const sz=this._citySize(body);
-        // Glow
         if (body.deliveries>=3) {
             const gr=c.createRadialGradient(body.x,body.y,sz*0.5,body.x,body.y,sz*(body.deliveries>=15?5:body.deliveries>=7?3.5:2.2));
             gr.addColorStop(0,'rgba(255,255,255,0.12)'); gr.addColorStop(1,'rgba(0,0,0,0)');
@@ -761,14 +743,12 @@ class SpaceGame {
         c.fillStyle='#55efc4'; c.font='13px "Inter",sans-serif';
         c.fillText(`PILOTI: ${this.pilots.length}`, this.width-22, 36);
         c.fillStyle='rgba(255,255,255,0.3)'; c.font='11px "Inter",sans-serif';
-        c.fillText('[H] flotta  [G] segui nave  [?] guida', this.width-22, 54);
+        c.fillText('[H] flotta  [G] segui nave  [?] guida  [C] Macchina a Gancio', this.width-22, 54);
         if (this.homeBody) { c.fillStyle='#f9ca24'; c.font='12px "Inter",sans-serif'; c.fillText(`⬡ ${this.homeBody.name}`, this.width-22, 72); }
 
-        // Zoom indicator
         c.fillStyle='rgba(255,255,255,0.25)'; c.font='11px "Inter",sans-serif'; c.textAlign='right';
         c.fillText(`zoom ${this.camera.zoom.toFixed(1)}×`, this.width-22, 90);
 
-        // Crisis bars
         this.activeCrises.forEach((body,i) => {
             if (!body.crisis) return;
             const x=this.width-238, y=64+i*38;
@@ -779,16 +759,13 @@ class SpaceGame {
             c.fillText(`⚠  ${body.name}: ${body.crisis.resource}`, x+6, y+17);
         });
 
-        // Ship out-of-view arrow
         if (this._pendingShipArrow) {
             this._drawOffscreenArrow(this._pendingShipArrow.sx, this._pendingShipArrow.sy);
             this._pendingShipArrow = null;
         }
 
-        // Mobile on-screen buttons
         if (this.isTouchDevice) this._drawMobileButtons();
 
-        // Hire menu
         if (this.showHireMenu) {
             const mw=440,mh=282,mx=this.width/2-mw/2,my=this.height/2-mh/2;
             c.fillStyle='rgba(6,7,15,0.96)'; c.fillRect(mx,my,mw,mh);
@@ -826,13 +803,11 @@ class SpaceGame {
         const isPlay = ['PLAY','COUNTDOWN','BOOST'].includes(this.launchState);
 
         btns.forEach(btn => {
-            if (btn.flight && !isPlay) return; // hide flight buttons outside gameplay
+            if (btn.flight && !isPlay) return;
 
             const pressed = !!this.mobileKeys[btn.key];
-            // Active toggle state
             const active = (btn.id==='guide' && this.showGuide);
 
-            // Outer glow when pressed
             if (pressed || active) {
                 c.beginPath(); c.arc(btn.cx, btn.cy, btn.r*1.55, 0, Math.PI*2);
                 c.fillStyle = btn.flight
@@ -841,7 +816,6 @@ class SpaceGame {
                 c.fill();
             }
 
-            // Button body
             c.beginPath(); c.arc(btn.cx, btn.cy, btn.r, 0, Math.PI*2);
             let bg;
             if (pressed || active) {
@@ -853,13 +827,11 @@ class SpaceGame {
             }
             c.fillStyle = bg; c.fill();
 
-            // Border
             c.strokeStyle = pressed || active
                 ? (btn.flight ? (btn.id==='thrust' ? 'rgba(249,202,36,0.9)' : 'rgba(162,155,254,0.9)') : 'rgba(255,255,255,0.8)')
                 : 'rgba(255,255,255,0.22)';
             c.lineWidth = 1.5; c.stroke();
 
-            // Label
             c.fillStyle  = pressed || active ? '#fff' : 'rgba(255,255,255,0.6)';
             c.font       = `bold ${Math.round(btn.r * 0.68)}px "Inter",sans-serif`;
             c.textAlign  = 'center';
@@ -875,11 +847,9 @@ class SpaceGame {
         const c=this.ctx;
         const gw=720, gh=460, gx=this.width/2-gw/2, gy=this.height/2-gh/2;
 
-        // Backdrop
         c.fillStyle='rgba(6,7,15,0.96)'; c.fillRect(gx,gy,gw,gh);
         c.strokeStyle='rgba(162,155,254,0.7)'; c.lineWidth=1.5; c.strokeRect(gx,gy,gw,gh);
 
-        // Title
         c.textAlign='center'; c.fillStyle='#a29bfe'; c.font='bold 20px "Inter",sans-serif';
         c.fillText('GUIDA AL GIOCO', this.width/2, gy+32);
         c.strokeStyle='rgba(162,155,254,0.25)'; c.lineWidth=1;
@@ -887,13 +857,11 @@ class SpaceGame {
 
         const col1=gx+28, col2=gx+gw/2+14, rowH=26, startY=gy+70;
 
-        // Column headers
         c.fillStyle='rgba(255,255,255,0.35)'; c.font='bold 11px "Inter",sans-serif';
         c.textAlign='left';
         c.fillText('CONTROLLI', col1, startY-8);
         c.fillText('MECCANICHE DI GIOCO', col2, startY-8);
 
-        // Left column — controls
         const ctrl=[
             ['W / ↑','Motore propulsore'],
             ['A / ←','Ruota a sinistra'],
@@ -903,6 +871,7 @@ class SpaceGame {
             ['G','Ricentra la visuale sulla nave'],
             ['H','Apri menu assumi pilota'],
             ['?','Apri / chiudi questa guida'],
+            ['C','MACCHINA A GANCIO (mini-gioco)'],
             ['Logo × 5','Esci dal minigioco'],
             ['ENTER / doppio click','Conferma fondazione città'],
         ];
@@ -914,11 +883,9 @@ class SpaceGame {
             c.fillText(desc, col1+170, y);
         });
 
-        // Divider
         c.strokeStyle='rgba(255,255,255,0.08)'; c.lineWidth=1;
         c.beginPath(); c.moveTo(gx+gw/2,gy+54); c.lineTo(gx+gw/2,gy+gh-50); c.stroke();
 
-        // Right column — mechanics
         const mech=[
             ['🚀 Volo','Avvicinati a un corpo celeste per caricare'],
             ['','o scaricare risorse automaticamente'],
@@ -931,6 +898,7 @@ class SpaceGame {
             ['','7 consegne → Città  ·  15 → Metropoli'],
             ['👨‍✈️ Flotta','ROOKIE $800 · SPERICOLATO $1500'],
             ['','VETERANO $3000 (evita la fascia)'],
+            ['🦾 Claw','Mini-gioco separato (tasto C)'],
         ];
         mech.forEach(([key,desc],i) => {
             const y=startY+i*rowH;
@@ -939,7 +907,6 @@ class SpaceGame {
             c.fillText(desc, key?col2+140:col2+140, y);
         });
 
-        // Footer
         c.fillStyle='rgba(255,255,255,0.25)'; c.font='12px "Inter",sans-serif'; c.textAlign='center';
         c.fillText('[?]  o  [ESC]  per chiudere', this.width/2, gy+gh-16);
     }
@@ -998,9 +965,24 @@ class SpaceGame {
     loop() { if (!this.running) return; this.update(); this.draw(); requestAnimationFrame(()=>this.loop()); }
 }
 
-// ── Secret Trigger ────────────────────────────────────────────────────────────
+// ── Secret Trigger (Space Game) ─────────────────────────────────────────────
 let _clicks=0;
-document.getElementById('secret-trigger').addEventListener('click', e => {
-    e.preventDefault(); e.stopPropagation();
-    if (++_clicks>=5) { document.getElementById('game-container').classList.add('active'); new SpaceGame('game-canvas').start(); _clicks=0; }
-});
+const secretTrigger = document.getElementById('secret-trigger');
+if (secretTrigger) {
+    secretTrigger.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        if (++_clicks>=5) { 
+            const container = document.getElementById('game-container');
+            if (container) container.classList.add('active'); 
+            new SpaceGame('game-canvas').start(); 
+            _clicks=0; 
+        }
+    });
+}
+
+// ── MACCHINA A GANCIO ────────────────────────────────────────────────────────
+// The full claw machine mini-game is in macchina-a-gancio.html
+// It can be launched with the C key from inside the Space Game (see _launchClawMachine above)
+// or directly from your hub / index.html with a button linking to macchina-a-gancio.html
+
+console.log('%c[Galaxy World] game.js loaded. Press C in-game to launch MACCHINA A GANCIO mini-game.', 'color:#f9ca24');
