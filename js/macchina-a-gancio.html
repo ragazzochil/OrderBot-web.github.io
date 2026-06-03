@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MACCHINA A GANCIO • Galaxy World</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Press+Start+2P&amp;display=swap');
+        
+        :root {
+            --bg: #06070f;
+            --yellow: #f9ca24;
+            --red: #d63031;
+            --purple: #a29bfe;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 12px;
+            background: linear-gradient(#06070f, #0a0b14);
+        }
+        
+        .top-bar {
+            width: 100%;
+            max-width: 620px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: rgba(10, 11, 20, 0.95);
+            border: 1px solid rgba(249, 202, 36, 0.2);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo {
+            width: 28px;
+            height: 28px;
+            background: var(--yellow);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 900;
+            color: #06070f;
+        }
+        
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--yellow);
+        }
+        
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .money {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 18px;
+            color: #55efc4;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .lang-switch {
+            display: flex;
+            background: #11131f;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .lang-btn {
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .lang-btn.active {
+            background: #a29bfe;
+            color: #06070f;
+        }
+        
+        .lang-btn:not(.active) {
+            color: #888;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 11px;
+        }
+        
+        .main-area {
+            position: relative;
+            width: 100%;
+            max-width: 620px;
+            background: #11131f;
+            border: 4px solid var(--yellow);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 0 8px rgba(249, 202, 36, 0.08),
+                        0 20px 40px rgba(0,0,0,0.6);
+        }
+        
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+            image-rendering: crisp-edges;
+        }
+        
+        .bottom-controls {
+            width: 100%;
+            max-width: 620px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding: 0 8px;
+        }
+        
+        .btn {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: scale(0.96);
+        }
+        
+        .btn-back {
+            background: #d63031;
+            color: white;
+            font-size: 13px;
+            padding: 10px 18px;
+        }
+        
+        .btn-launch {
+            background: linear-gradient(145deg, #f9ca24, #f0b90b);
+            color: #06070f;
+            font-size: 17px;
+            font-weight: 800;
+            padding: 16px 42px;
+            box-shadow: 0 6px 20px rgba(249, 202, 36, 0.4);
+            min-width: 220px;
+        }
+        
+        .btn-launch:active {
+            box-shadow: 0 2px 8px rgba(249, 202, 36, 0.5);
+        }
+        
+        .footer-hint {
+            width: 100%;
+            max-width: 620px;
+            text-align: center;
+            margin-top: 14px;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .mobile-only {
+            display: none;
+        }
+        
+        @media (max-width: 640px) {
+            .top-bar {
+                padding: 6px 10px;
+            }
+            .title {
+                font-size: 18px;
+            }
+            .btn-launch {
+                font-size: 15px;
+                padding: 14px 32px;
+                min-width: 180px;
+            }
+            .footer-hint {
+                font-size: 11px;
+                gap: 10px;
+            }
+            .mobile-only {
+                display: block;
+            }
+        }
+        
+        .win-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(6, 7, 15, 0.95);
+            border: 2px solid var(--yellow);
+            border-radius: 16px;
+            padding: 24px 40px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        }
+        
+        .win-popup.show {
+            display: block;
+            animation: popIn 0.3s ease;
+        }
+        
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-left">
+                <div class="logo">🦾</div>
+                <div>
+                    <div class="title">MACCHINA A GANCIO</div>
+                </div>
+            </div>
+            
+            <div class="top-right">
+                <div class="money">
+                    <span>$</span> <span id="money">1240</span>
+                </div>
+                
+                <div class="lang-switch">
+                    <div class="lang-btn active" id="lang-ita">ITA</div>
+                    <div class="lang-btn" id="lang-eng">ENG</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Area -->
+        <div class="main-area" id="main-area">
+            <canvas id="game-canvas" width="600" height="520"></canvas>
+            
+            <!-- Win popup -->
+            <div class="win-popup" id="win-popup">
+                <div style="font-size: 28px; color: #f9ca24; font-weight: 800; margin-bottom: 8px;">★ HAI VINTO! ★</div>
+                <div id="win-text" style="font-size: 18px; color: #fff; margin-bottom: 12px;"></div>
+                <div style="font-size: 13px; color: #888;">+ <span id="win-amount">0</span> $</div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="bottom-controls">
+            <button class="btn btn-back" id="btn-back">
+                ✕ TORNA ALLA HUB
+            </button>
+            
+            <button class="btn btn-launch" id="btn-launch">
+                LANCIA IL GANCIO<br>
+                <span style="font-size: 11px; opacity: 0.85; font-weight: 500;">SPAZIO o TAP QUI</span>
+            </button>
+        </div>
+        
+        <!-- Footer hints -->
+        <div class="footer-hint">
+            <div>← → Muovi il gancio</div>
+            <div>SPAZIO / TAP = Lancia</div>
+            <div>R = Ricarica palline</div>
+            <div class="mobile-only">Trascina sul canvas per muovere</div>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== GAME VARIABLES ====================
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d', { alpha: true });
+        
+        let WIDTH = 600;
+        let HEIGHT = 520;
+        
+        // Game state
+        let money = 1240;
+        let score = 0;
+        let wonCount = 0;
+        let lang = 'ita';
+        
+        // Claw state
+        let claw = {
+            x: 300,
+            y: 95,
+            targetX: 300,
+            minY: 95,
+            maxY: 420,
+            speed: 3.2,
+            state: 'idle',
+            grabbedBall: null,
+            prongAngle: 38,
+            grabTimer: 0
+        };
+        
+        // Balls
+        let balls = [];
+        const BALL_COLORS = ['#ff69b4', '#00ced1', '#9370db', '#ff7f50', '#ffd700', '#00bfff', '#ff69b4', '#20b2aa'];
+        
+        // Particles
+        let particles = [];
+        
+        // Input
+        let keys = {};
+        let isDragging = false;
+        let lastTouchX = 0;
+        let touchStartTime = 0;
+        
+        // UI
+        const moneyEl = document.getElementById('money');
+        const winPopup = document.getElementById('win-popup');
+        const winText = document.getElementById('win-text');
+        const winAmount = document.getElementById('win-amount');
+        
+        // ==================== RESPONSIVE CANVAS ====================
+        function resizeCanvas() {
+            const container = document.getElementById('main-area');
+            const maxW = Math.min(620, window.innerWidth - 32);
+            const aspect = 600 / 520;
+            
+            let newW = maxW;
+            let newH = Math.round(newW / aspect);
+            
+            if (window.innerWidth < 480) {
+                newW = Math.min(460, window.innerWidth - 24);
+                newH = Math.round(newW * 0.92);
+            }
+            
+            canvas.style.width = newW + 'px';
+            canvas.style.height = newH + 'px';
+            
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.floor(newW * dpr);
+            canvas.height = Math.floor(newH * dpr);
+            ctx.scale(dpr, dpr);
+            
+            WIDTH = newW;
+            HEIGHT = newH;
+            
+            if (claw.x > WIDTH - 60) claw.x = WIDTH - 60;
+            if (claw.targetX > WIDTH - 60) claw.targetX = WIDTH - 60;
+        }
+        
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+        
+        // ==================== INITIALIZE BALLS ====================
+        function initBalls() {
+            balls = [];
+            const colors = [...BALL_COLORS];
+            
+            for (let i = 0; i < 5; i++) {
+                balls.push({
+                    x: 110 + i * 95,
+                    y: 380,
+                    r: 18,
+                    color: colors[i % colors.length],
+                    value: 80 + Math.floor(Math.random() * 40)
+                });
+            }
+            
+            for (let i = 0; i < 4; i++) {
+                balls.push({
+                    x: 155 + i * 95,
+                    y: 345,
+                    r: 17,
+                    color: colors[(i + 3) % colors.length],
+                    value: 120 + Math.floor(Math.random() * 60)
+                });
+            }
+            
+            for (let i = 0; i < 4; i++) {
+                balls.push({
+                    x: 130 + i * 95,
+                    y: 310,
+                    r: 16,
+                    color: colors[(i + 1) % colors.length],
+                    value: 150 + Math.floor(Math.random() * 80)
+                });
+            }
+            
+            balls.push({
+                x: 280,
+                y: 275,
+                r: 15,
+                color: '#f9ca24',
+                value: 380,
+                special: true
+            });
+        }
+        
+        // ==================== PARTICLES ====================
+        function createParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1.5 + Math.random() * 3.5;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 1.5,
+                    life: 35 + Math.random() * 25,
+                    maxLife: 60,
+                    color: color || '#f9ca24',
+                    size: 2 + Math.random() * 2.5
+                });
+            }
+        }
+        
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.12;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+        
+        function drawParticles() {
+            ctx.globalAlpha = 0.9;
+            for (const p of particles) {
+                const alpha = p.life / p.maxLife;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = alpha * 0.85;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * (alpha * 0.7 + 0.3), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        // ==================== DRAW MACHINE ====================
+        function drawMachine() {
+            ctx.fillStyle = '#0f111a';
+            ctx.fillRect(40, 70, WIDTH - 80, HEIGHT - 110);
+            
+            ctx.strokeStyle = 'rgba(249, 202, 36, 0.25)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(48, 78, WIDTH - 96, HEIGHT - 126);
+            
+            ctx.fillStyle = '#2a2d3a';
+            ctx.fillRect(55, 72, WIDTH - 110, 22);
+            ctx.strokeStyle = '#f9ca24';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(55, 72, WIDTH - 110, 22);
+            
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.fillRect(55, 72, WIDTH - 110, 6);
+            
+            ctx.fillStyle = '#1a1d28';
+            ctx.fillRect(40, 70, 18, HEIGHT - 110);
+            ctx.fillRect(WIDTH - 58, 70, 18, HEIGHT - 110);
+            
+            ctx.fillStyle = '#15171f';
+            ctx.fillRect(55, HEIGHT - 55, WIDTH - 110, 35);
+            ctx.strokeStyle = 'rgba(249, 202, 36, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(55, HEIGHT - 55, WIDTH - 110, 35);
+            
+            ctx.fillStyle = 'rgba(162, 155, 254, 0.15)';
+            ctx.fillRect(WIDTH - 95, 200, 38, 180);
+            ctx.strokeStyle = 'rgba(162, 155, 254, 0.4)';
+            ctx.strokeRect(WIDTH - 95, 200, 38, 180);
+            ctx.fillStyle = '#a29bfe';
+            ctx.font = 'bold 9px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('PREMIO', WIDTH - 76, 390);
+        }
+        
+        // ==================== DRAW CLAW ====================
+        function drawClaw() {
+            const c = claw;
+            const cartX = c.x;
+            const cartY = 82;
+            
+            ctx.fillStyle = '#f9ca24';
+            ctx.fillRect(cartX - 22, cartY - 6, 44, 14);
+            ctx.fillStyle = '#c9a01a';
+            ctx.fillRect(cartX - 18, cartY - 2, 36, 6);
+            
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cartX, cartY + 8);
+            ctx.lineTo(cartX, c.y - 8);
+            ctx.stroke();
+            
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cartX - 1, cartY + 8);
+            ctx.lineTo(cartX - 1, c.y - 8);
+            ctx.stroke();
+            
+            ctx.save();
+            ctx.translate(cartX, c.y);
+            
+            ctx.fillStyle = '#f9ca24';
+            ctx.beginPath();
+            ctx.rect(-12, -8, 24, 16);
+            ctx.fill();
+            ctx.strokeStyle = '#c9a01a';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            const angle = c.prongAngle * (Math.PI / 180);
+            const prongLen = 28;
+            
+            ctx.strokeStyle = '#f9ca24';
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            
+            ctx.beginPath();
+            ctx.moveTo(-6, 6);
+            ctx.lineTo(-6 - Math.sin(angle) * prongLen, 6 + Math.cos(angle) * prongLen);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(6, 6);
+            ctx.lineTo(6 + Math.sin(angle) * prongLen, 6 + Math.cos(angle) * prongLen);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#c9a01a';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(-6, 6);
+            ctx.lineTo(-6 - Math.sin(angle) * prongLen * 0.7, 6 + Math.cos(angle) * prongLen * 0.7);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(6, 6);
+            ctx.lineTo(6 + Math.sin(angle) * prongLen * 0.7, 6 + Math.cos(angle) * prongLen * 0.7);
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            if (c.grabbedBall) {
+                const b = c.grabbedBall;
+                ctx.save();
+                ctx.translate(cartX, c.y + 18);
+                ctx.fillStyle = b.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, b.r * 0.95, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                ctx.beginPath();
+                ctx.arc(-4, -5, b.r * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        // ==================== DRAW BALLS ====================
+        function drawBalls() {
+            for (const ball of balls) {
+                ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                ctx.beginPath();
+                ctx.ellipse(ball.x + 3, ball.y + 4, ball.r * 0.9, ball.r * 0.55, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = ball.color;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                ctx.beginPath();
+                ctx.arc(ball.x - ball.r * 0.32, ball.y - ball.r * 0.32, ball.r * 0.38, 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (ball.special) {
+                    ctx.strokeStyle = 'rgba(249, 202, 36, 0.6)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(ball.x, ball.y, ball.r + 4, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // ==================== UPDATE CLAW ====================
+        function updateClaw() {
+            const c = claw;
+            
+            if (c.state === 'idle') {
+                const moveSpeed = 4.5;
+                if (keys['ArrowLeft'] || keys['KeyA']) {
+                    c.targetX = Math.max(75, c.targetX - moveSpeed);
+                }
+                if (keys['ArrowRight'] || keys['KeyD']) {
+                    c.targetX = Math.min(WIDTH - 75, c.targetX + moveSpeed);
+                }
+                
+                c.x += (c.targetX - c.x) * 0.18;
+            }
+            
+            if (c.state === 'dropping') {
+                c.y += c.speed * 1.6;
+                if (c.y >= c.maxY) {
+                    c.y = c.maxY;
+                    c.state = 'grabbing';
+                    c.grabTimer = 18;
+                    c.prongAngle = 8;
+                }
+            }
+            
+            else if (c.state === 'grabbing') {
+                c.grabTimer--;
+                if (c.grabTimer <= 0) {
+                    let grabbed = null;
+                    let bestDist = 999;
+                    
+                    for (let i = 0; i < balls.length; i++) {
+                        const b = balls[i];
+                        const dx = b.x - c.x;
+                        const dy = b.y - c.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < b.r + 22 && dist < bestDist) {
+                            bestDist = dist;
+                            grabbed = i;
+                        }
+                    }
+                    
+                    if (grabbed !== null) {
+                        c.grabbedBall = balls[grabbed];
+                        balls.splice(grabbed, 1);
+                        createParticles(c.x, c.y + 15, 18, c.grabbedBall.color);
+                        
+                        if (Math.random() < 0.15) {
+                            c.grabbedBall = null;
+                            createParticles(c.x, c.y + 20, 8, '#888');
+                        }
+                    } else {
+                        createParticles(c.x, c.y + 18, 6, '#555');
+                    }
+                    
+                    c.state = 'ascending';
+                    c.prongAngle = 38;
+                }
+            }
+            
+            else if (c.state === 'ascending') {
+                c.y -= c.speed * 1.35;
+                
+                if (c.grabbedBall) {
+                    c.grabbedBall.x = c.x;
+                    c.grabbedBall.y = c.y + 18;
+                }
+                
+                if (c.y <= c.minY) {
+                    c.y = c.minY;
+                    c.state = 'releasing';
+                    c.grabTimer = 12;
+                }
+            }
+            
+            else if (c.state === 'releasing') {
+                c.grabTimer--;
+                if (c.grabTimer <= 0) {
+                    if (c.grabbedBall) {
+                        const prize = c.grabbedBall.value;
+                        money += prize;
+                        score += prize * 1.2;
+                        wonCount++;
+                        
+                        updateMoney();
+                        showWinPopup(c.grabbedBall.color, prize);
+                        createParticles(c.x, c.y + 25, 25, c.grabbedBall.color);
+                        
+                        c.grabbedBall = null;
+                    }
+                    
+                    c.state = 'idle';
+                    c.prongAngle = 38;
+                    
+                    if (balls.length === 0) {
+                        setTimeout(() => {
+                            if (confirm('Macchina vuota! Ricaricare le palline?')) {
+                                initBalls();
+                            }
+                        }, 600);
+                    }
+                }
+            }
+        }
+        
+        function updateMoney() {
+            moneyEl.textContent = Math.floor(money);
+        }
+        
+        function showWinPopup(color, amount) {
+            winText.innerHTML = `<span style="color:${color}">PALLINA CATTURATA!</span>`;
+            winAmount.textContent = amount;
+            winPopup.classList.add('show');
+            
+            setTimeout(() => {
+                winPopup.classList.remove('show');
+            }, 1350);
+        }
+        
+        // ==================== DRAW HUD / OVERLAY ====================
+        function drawHUD() {
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.font = 'bold 15px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`SCORE: ${Math.floor(score)}`, 58, 42);
+            
+            ctx.fillStyle = '#f9ca24';
+            ctx.fillText(`VINTI: ${wonCount}`, 58, 60);
+            
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('Trascina o usa ← →  •  SPAZIO per lanciare', WIDTH - 58, 42);
+        }
+        
+        // ==================== MAIN DRAW ====================
+        function draw() {
+            ctx.fillStyle = '#06070f';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+            
+            drawMachine();
+            drawBalls();
+            drawClaw();
+            drawParticles();
+            drawHUD();
+        }
+        
+        // ==================== GAME LOOP ====================
+        function gameLoop() {
+            updateClaw();
+            updateParticles();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // ==================== INPUT HANDLING ====================
+        function setupInput() {
+            window.addEventListener('keydown', (e) => {
+                keys[e.code] = true;
+                
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    tryLaunch();
+                }
+                
+                if (e.code === 'KeyR') {
+                    initBalls();
+                    createParticles(WIDTH/2, 300, 30, '#f9ca24');
+                }
+                
+                if (e.code === 'Escape') {
+                    document.getElementById('btn-back').click();
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.code] = false;
+            });
+            
+            canvas.addEventListener('mousedown', (e) => {
+                if (claw.state !== 'idle') return;
+                isDragging = true;
+                updateClawTargetFromEvent(e);
+            });
+            
+            window.addEventListener('mousemove', (e) => {
+                if (isDragging && claw.state === 'idle') {
+                    updateClawTargetFromEvent(e);
+                }
+            });
+            
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchStartTime = Date.now();
+                
+                if (claw.state === 'idle') {
+                    isDragging = true;
+                    updateClawTargetFromEvent(e.touches[0]);
+                }
+            }, { passive: false });
+            
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (isDragging && claw.state === 'idle') {
+                    updateClawTargetFromEvent(e.touches[0]);
+                }
+            }, { passive: false });
+            
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                isDragging = false;
+                
+                const tapDuration = Date.now() - touchStartTime;
+                if (tapDuration < 220 && claw.state === 'idle') {
+                    tryLaunch();
+                }
+            }, { passive: false });
+            
+            document.getElementById('btn-launch').addEventListener('click', () => {
+                tryLaunch();
+            });
+            
+            document.getElementById('btn-back').addEventListener('click', () => {
+                if (confirm('Tornare alla HUB?')) {
+                    window.location.href = 'index.html';
+                }
+            });
+            
+            document.getElementById('lang-ita').addEventListener('click', () => switchLang('ita'));
+            document.getElementById('lang-eng').addEventListener('click', () => switchLang('eng'));
+            
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+        }
+        
+        function updateClawTargetFromEvent(ev) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = ev.clientX || (ev.touches && ev.touches[0].clientX);
+            
+            const scaleX = WIDTH / rect.width;
+            let newX = (clientX - rect.left) * scaleX;
+            
+            newX = Math.max(75, Math.min(WIDTH - 75, newX));
+            claw.targetX = newX;
+            claw.x = newX;
+        }
+        
+        function tryLaunch() {
+            if (claw.state !== 'idle') return;
+            
+            if (money < 15) {
+                alert('Crediti insufficienti! (minimo $15)');
+                return;
+            }
+            money -= 15;
+            updateMoney();
+            
+            claw.state = 'dropping';
+            claw.prongAngle = 38;
+            claw.grabbedBall = null;
+            
+            if (navigator.vibrate) navigator.vibrate(25);
+        }
+        
+        function switchLang(newLang) {
+            lang = newLang;
+            
+            const itaBtn = document.getElementById('lang-ita');
+            const engBtn = document.getElementById('lang-eng');
+            
+            if (lang === 'ita') {
+                itaBtn.classList.add('active');
+                engBtn.classList.remove('active');
+                document.querySelector('.title').textContent = 'MACCHINA A GANCIO';
+                document.getElementById('btn-back').innerHTML = '✕ TORNA ALLA HUB';
+                document.getElementById('btn-launch').innerHTML = 
+                    `LANCIA IL GANCIO<br><span style="font-size:11px;opacity:0.85;font-weight:500;">SPAZIO o TAP QUI</span>`;
+            } else {
+                itaBtn.classList.remove('active');
+                engBtn.classList.add('active');
+                document.querySelector('.title').textContent = 'CLAW MACHINE';
+                document.getElementById('btn-back').innerHTML = '✕ BACK TO HUB';
+                document.getElementById('btn-launch').innerHTML = 
+                    `LAUNCH CLAW<br><span style="font-size:11px;opacity:0.85;font-weight:500;">SPACE or TAP HERE</span>`;
+            }
+        }
+        
+        // ==================== INIT ====================
+        function init() {
+            resizeCanvas();
+            initBalls();
+            
+            claw.x = WIDTH / 2;
+            claw.targetX = WIDTH / 2;
+            
+            createParticles(WIDTH/2, 280, 12, '#f9ca24');
+            
+            setupInput();
+            updateMoney();
+            
+            gameLoop();
+            
+            let logoClicks = 0;
+            document.querySelector('.logo').addEventListener('click', () => {
+                logoClicks++;
+                if (logoClicks >= 5) {
+                    money += 300;
+                    initBalls();
+                    createParticles(WIDTH/2, 200, 40, '#55efc4');
+                    updateMoney();
+                    logoClicks = 0;
+                }
+            });
+            
+            if ('ontouchstart' in window) {
+                setTimeout(() => {
+                    const hint = document.querySelector('.footer-hint');
+                    if (hint) hint.style.opacity = '0.6';
+                }, 8000);
+            }
+            
+            console.log('%c[Macchina a Gancio] Ready. Use ← → + SPACE or drag + tap on mobile.', 'color:#666');
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
